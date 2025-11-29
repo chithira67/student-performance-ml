@@ -9,24 +9,36 @@ def create_target(df: pd.DataFrame) -> pd.DataFrame:
     """
     Create a binary target variable: pass/fail based on final grade G3.
     """
+    df = df.copy()  # Avoid modifying original dataframe
     df["pass"] = (df["G3"] >= 10).astype(int)
     return df
 
 
 def build_preprocessing_pipeline(df: pd.DataFrame):
     """Build preprocessing pipeline (scaling + one-hot encoding)."""
-    num_cols = df.select_dtypes(include=['int64', 'float64']).columns.drop("pass")
-    cat_cols = df.select_dtypes(include=['object']).columns
+    num_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+    if "pass" in num_cols:
+        num_cols.remove("pass")
+    cat_cols = df.select_dtypes(include=['object']).columns.tolist()
 
-    numeric_transformer = StandardScaler()
-    categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+    transformers = []
+    
+    if len(num_cols) > 0:
+        numeric_transformer = StandardScaler()
+        transformers.append(("num", numeric_transformer, num_cols))
+    
+    if len(cat_cols) > 0:
+        # Use sparse=False for older sklearn versions, sparse_output=False for newer
+        try:
+            categorical_transformer = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+        except TypeError:
+            categorical_transformer = OneHotEncoder(handle_unknown='ignore', sparse=False)
+        transformers.append(("cat", categorical_transformer, cat_cols))
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", numeric_transformer, num_cols),
-            ("cat", categorical_transformer, cat_cols)
-        ]
-    )
+    if len(transformers) == 0:
+        raise ValueError("No numeric or categorical columns found for preprocessing")
+    
+    preprocessor = ColumnTransformer(transformers=transformers, remainder='passthrough')
 
     return preprocessor, num_cols, cat_cols
 
@@ -34,13 +46,17 @@ def build_preprocessing_pipeline(df: pd.DataFrame):
 def preprocess_features(df: pd.DataFrame):
     """Create target + preprocessing pipeline."""
     df = create_target(df)
-    preprocessor, num_cols, cat_cols = build_preprocessing_pipeline(df)
     X = df.drop(["pass"], axis=1)
     y = df["pass"]
+    # Build pipeline on X (without target column)
+    preprocessor, num_cols, cat_cols = build_preprocessing_pipeline(X)
     return X, y, preprocessor
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("cleaned_student_mat.csv")
+    import os
+    data_path = os.path.join("data", "processed", "cleaned_student_mat.csv")
+    df = pd.read_csv(data_path)
     X, y, preprocessor = preprocess_features(df)
     print("Feature engineering complete.")
+    print(f"X shape: {X.shape}, y shape: {y.shape}")

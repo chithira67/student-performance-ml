@@ -33,7 +33,10 @@ def evaluate_model(clf, X_test, y_test):
 
 def save_model(clf, filename="student_performance_model.pkl"):
     """Save model to disk."""
+    import os
+    os.makedirs(os.path.dirname(filename) if os.path.dirname(filename) else '.', exist_ok=True)
     joblib.dump(clf, filename)
+    print(f"Model saved to {filename}")
 
 
 if __name__ == "__main__":
