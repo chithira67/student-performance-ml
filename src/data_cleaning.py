@@ -5,7 +5,7 @@ from sklearn.impute import SimpleImputer
 
 def load_data(path: str) -> pd.DataFrame:
     """Load dataset from CSV."""
-    df = pd.read_csv("C:\Users\DELL\Desktop\student-performance-ml\data\raw\student-mat.csv")
+    df = pd.read_csv("../data/raw/student-mat.csv")
     return df
 
 
