@@ -9,4 +9,3 @@ based on demographic, behavioral, and academic factors.
 - ML models: Linear Regression, Random Forest, XGBoost
 - Model evaluation (RMSE, MAE, R²)
 - Streamlit web app for real-time prediction
-- Clean project structure for industry-level work
