@@ -413,21 +413,47 @@ def inject_custom_css():
 def collect_user_inputs(schema: Dict[str, Dict[str, Any]]) -> pd.DataFrame:
     st.markdown(
         '<div class="section-header">🎯 Student Profile</div>'
-        '<div class="section-subtitle">Describe the student to estimate performance and risk.</div>',
+        '<div class="section-subtitle">Use a quick estimate with a few key details or switch to the full profile for more control.</div>',
         unsafe_allow_html=True,
     )
 
-    # Layout inputs into columns by logical groups
-    col_demo, col_parents, col_study = st.columns(3)
+    mode = st.radio(
+        "Detail level",
+        ["Quick estimate (recommended)", "Full profile"],
+        index=0,
+        horizontal=True,
+        help="Quick estimate uses a small set of the most influential fields and fills the rest with realistic defaults.",
+    )
 
     inputs: Dict[str, Any] = {}
 
-    # Demographics
-    with col_demo:
-        st.markdown("**Demographics**")
-        for key in ["age", "sex", "address", "famsize", "Pstatus"]:
-            cfg = schema[key]
-            if cfg["type"] == "number":
+    if mode.startswith("Quick"):
+        col_a, col_b, col_c = st.columns(3)
+
+        with col_a:
+            st.markdown("**Core details**")
+            for key in ["age", "sex"]:
+                cfg = schema[key]
+                if cfg["type"] == "number":
+                    inputs[key] = st.number_input(
+                        key,
+                        min_value=cfg["min"],
+                        max_value=cfg["max"],
+                        value=cfg["default"],
+                        help=cfg["help"],
+                    )
+                else:
+                    inputs[key] = st.selectbox(
+                        key,
+                        cfg["options"],
+                        index=cfg["options"].index(cfg["default"]),
+                        help=cfg["help"],
+                    )
+
+        with col_b:
+            st.markdown("**Study & attendance**")
+            for key in ["studytime", "failures", "absences"]:
+                cfg = schema[key]
                 inputs[key] = st.number_input(
                     key,
                     min_value=cfg["min"],
@@ -435,20 +461,33 @@ def collect_user_inputs(schema: Dict[str, Dict[str, Any]]) -> pd.DataFrame:
                     value=cfg["default"],
                     help=cfg["help"],
                 )
-            else:
-                inputs[key] = st.selectbox(
-                    key,
-                    cfg["options"],
-                    index=cfg["options"].index(cfg["default"]),
-                    help=cfg["help"],
-                )
 
-    # Parents
-    with col_parents:
-        st.markdown("**Parents & Home**")
-        for key in ["Medu", "Fedu", "Mjob", "Fjob", "reason", "guardian"]:
-            cfg = schema[key]
-            if cfg["type"] == "number":
+        with col_c:
+            st.markdown("**Support & habits**")
+            for key in ["famsup", "schoolsup", "goout", "Dalc", "Walc"]:
+                cfg = schema[key]
+                if cfg["type"] == "number":
+                    inputs[key] = st.number_input(
+                        key,
+                        min_value=cfg["min"],
+                        max_value=cfg["max"],
+                        value=cfg["default"],
+                        help=cfg["help"],
+                    )
+                else:
+                    inputs[key] = st.selectbox(
+                        key,
+                        cfg["options"],
+                        index=cfg["options"].index(cfg["default"]),
+                        help=cfg["help"],
+                    )
+
+        st.markdown("---")
+        col_perf, _ = st.columns([1, 1])
+        with col_perf:
+            st.markdown("**Prior performance (optional but powerful)**")
+            for key in ["G1", "G2"]:
+                cfg = schema[key]
                 inputs[key] = st.number_input(
                     key,
                     min_value=cfg["min"],
@@ -456,7 +495,67 @@ def collect_user_inputs(schema: Dict[str, Dict[str, Any]]) -> pd.DataFrame:
                     value=cfg["default"],
                     help=cfg["help"],
                 )
-            else:
+    else:
+        # Full profile – expose the complete feature set with structured grouping
+        col_demo, col_parents, col_study = st.columns(3)
+
+        # Demographics
+        with col_demo:
+            st.markdown("**Demographics**")
+            for key in ["age", "sex", "address", "famsize", "Pstatus"]:
+                cfg = schema[key]
+                if cfg["type"] == "number":
+                    inputs[key] = st.number_input(
+                        key,
+                        min_value=cfg["min"],
+                        max_value=cfg["max"],
+                        value=cfg["default"],
+                        help=cfg["help"],
+                    )
+                else:
+                    inputs[key] = st.selectbox(
+                        key,
+                        cfg["options"],
+                        index=cfg["options"].index(cfg["default"]),
+                        help=cfg["help"],
+                    )
+
+        # Parents
+        with col_parents:
+            st.markdown("**Parents & Home**")
+            for key in ["Medu", "Fedu", "Mjob", "Fjob", "reason", "guardian"]:
+                cfg = schema[key]
+                if cfg["type"] == "number":
+                    inputs[key] = st.number_input(
+                        key,
+                        min_value=cfg["min"],
+                        max_value=cfg["max"],
+                        value=cfg["default"],
+                        help=cfg["help"],
+                    )
+                else:
+                    inputs[key] = st.selectbox(
+                        key,
+                        cfg["options"],
+                        index=cfg["options"].index(cfg["default"]),
+                        help=cfg["help"],
+                    )
+
+        # Study / support
+        with col_study:
+            st.markdown("**Study & Support**")
+            for key in ["traveltime", "studytime", "failures"]:
+                cfg = schema[key]
+                inputs[key] = st.number_input(
+                    key,
+                    min_value=cfg["min"],
+                    max_value=cfg["max"],
+                    value=cfg["default"],
+                    help=cfg["help"],
+                )
+
+            for key in ["schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"]:
+                cfg = schema[key]
                 inputs[key] = st.selectbox(
                     key,
                     cfg["options"],
@@ -464,66 +563,44 @@ def collect_user_inputs(schema: Dict[str, Dict[str, Any]]) -> pd.DataFrame:
                     help=cfg["help"],
                 )
 
-    # Study / support
-    with col_study:
-        st.markdown("**Study & Support**")
-        for key in ["traveltime", "studytime", "failures"]:
-            cfg = schema[key]
-            inputs[key] = st.number_input(
-                key,
-                min_value=cfg["min"],
-                max_value=cfg["max"],
-                value=cfg["default"],
-                help=cfg["help"],
-            )
+        st.markdown("---")
+        col_social, col_health, col_grades = st.columns(3)
 
-        for key in ["schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic"]:
-            cfg = schema[key]
-            inputs[key] = st.selectbox(
-                key,
-                cfg["options"],
-                index=cfg["options"].index(cfg["default"]),
-                help=cfg["help"],
-            )
+        with col_social:
+            st.markdown("**Social & Time Use**")
+            for key in ["famrel", "freetime", "goout"]:
+                cfg = schema[key]
+                inputs[key] = st.number_input(
+                    key,
+                    min_value=cfg["min"],
+                    max_value=cfg["max"],
+                    value=cfg["default"],
+                    help=cfg["help"],
+                )
 
-    st.markdown("---")
-    col_social, col_health, col_grades = st.columns(3)
+        with col_health:
+            st.markdown("**Lifestyle & Health**")
+            for key in ["Dalc", "Walc", "health", "absences"]:
+                cfg = schema[key]
+                inputs[key] = st.number_input(
+                    key,
+                    min_value=cfg["min"],
+                    max_value=cfg["max"],
+                    value=cfg["default"],
+                    help=cfg["help"],
+                )
 
-    with col_social:
-        st.markdown("**Social & Time Use**")
-        for key in ["famrel", "freetime", "goout"]:
-            cfg = schema[key]
-            inputs[key] = st.number_input(
-                key,
-                min_value=cfg["min"],
-                max_value=cfg["max"],
-                value=cfg["default"],
-                help=cfg["help"],
-            )
-
-    with col_health:
-        st.markdown("**Lifestyle & Health**")
-        for key in ["Dalc", "Walc", "health", "absences"]:
-            cfg = schema[key]
-            inputs[key] = st.number_input(
-                key,
-                min_value=cfg["min"],
-                max_value=cfg["max"],
-                value=cfg["default"],
-                help=cfg["help"],
-            )
-
-    with col_grades:
-        st.markdown("**Prior Performance**")
-        for key in ["G1", "G2"]:
-            cfg = schema[key]
-            inputs[key] = st.number_input(
-                key,
-                min_value=cfg["min"],
-                max_value=cfg["max"],
-                value=cfg["default"],
-                help=cfg["help"],
-            )
+        with col_grades:
+            st.markdown("**Prior Performance**")
+            for key in ["G1", "G2"]:
+                cfg = schema[key]
+                inputs[key] = st.number_input(
+                    key,
+                    min_value=cfg["min"],
+                    max_value=cfg["max"],
+                    value=cfg["default"],
+                    help=cfg["help"],
+                )
 
     # school field (header shows it exists), keep simple in a single select below
     st.markdown("---")
@@ -571,7 +648,11 @@ def collect_user_inputs(schema: Dict[str, Dict[str, Any]]) -> pd.DataFrame:
         "G2",
     ]
 
-    data = {col: inputs.get(col) for col in ordered_cols}
+    # Fall back to schema defaults for any fields not explicitly collected in the chosen mode
+    data = {
+        col: inputs.get(col, schema[col]["default"] if col in schema else None)
+        for col in ordered_cols
+    }
     df = pd.DataFrame([data])
     return df
 
