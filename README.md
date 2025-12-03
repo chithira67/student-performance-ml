@@ -2,6 +2,8 @@
 
 This repository contains an end‑to‑end Machine Learning pipeline and a production‑style Streamlit app that predicts a student’s final exam score (G3) and risk of failing, based on demographic, behavioral, and academic factors.
 
+**Live demo**: [Open the Streamlit app](https://student-performance-ml-jbe5qgg4mq547ngrxpoh8d.streamlit.app)
+
 The project is built to be **reproducible, explainable, and easy to extend**, making it suitable as a portfolio piece or a foundation for academic analytics tools.
 
 ---
@@ -145,7 +147,12 @@ The Streamlit app (`app.py`) exposes the trained models through a polished dashb
 
 ## ▶️ Running the Streamlit App
 
-From the project root:
+You can either use the **hosted version** or run the app locally.
+
+- **Hosted (recommended for quick demo)**:  
+  [Open the Streamlit app](https://student-performance-ml-jbe5qgg4mq547ngrxpoh8d.streamlit.app)
+
+- **Run locally** (from the project root):
 
 ```bash
 streamlit run app.py
